@@ -1,0 +1,203 @@
+options {
+  JAVA_UNICODE_ESCAPE = true;
+}
+
+PARSER_BEGIN(MiniJavaParser)
+
+package myparser;
+
+import java.util.*;
+
+
+public class MiniJavaParser {
+    static Map<String, Integer> identifiers = new TreeMap<String, Integer>();
+    static Map<String, Integer> otherTokens = new TreeMap<String, Integer>();
+    static ArrayList<Map.Entry<String, Integer>> integerLiteralList = new ArrayList<Map.Entry<String, Integer>>();
+
+    static void putOtherTokens(String token){
+        if (otherTokens.containsKey(token)){
+            otherTokens.put(token, otherTokens.get(token) + 1);
+        } else {
+            otherTokens.put(token, 1);
+        }
+    }
+}
+
+PARSER_END(MiniJavaParser)
+
+
+// Insert a specification of a lexical analysis here. 
+TOKEN_MGR_DECLS:{
+    static int mc = 0;
+}
+
+// skip
+SKIP: { " " | "\t" | "\r" | "\n"}
+
+// multi line comment
+SPECIAL_TOKEN: {"/*" {mc = matchedToken.beginLine;} : IN_MULTI_LINE_COMMENT } 
+<IN_MULTI_LINE_COMMENT> SPECIAL_TOKEN: {"*/" : DEFAULT }
+<IN_MULTI_LINE_COMMENT> MORE: {< ~[] > }
+
+// single line comment
+MORE: {"//" : IN_SINGLE_LINE_COMMENT}
+<IN_SINGLE_LINE_COMMENT> SPECIAL_TOKEN: { <SINGLE_LINE_COMMENT : "\n" | "\r" | "\r\n">: DEFAULT }
+<IN_SINGLE_LINE_COMMENT> MORE: { <~[]> }
+
+
+TOKEN: 
+{ 
+  <CLASS: "class">
+| <LBRACE: "{">
+| <PUBLIC: "public">
+| <KSTATIC: "static">
+| <VOID: "void">
+| <MAIN: "main">
+| <LPAREN: "(">
+| <STRING: "String">
+| <LSQPAREN: "[">
+| <RSQPAREN: "]">
+| <RPAREN: ")">
+| <RBRACE: "}">
+| <EXTENDS: "extends">
+| <SEMICOLON: ";">
+| <RETURN: "return">
+| <COMMA: ",">
+| <INT: "int">
+| <BOOLEAN: "boolean">
+| <EQUAL: "=">
+| <IF: "if">
+| <ELSE: "else">
+| <WHILE: "while">
+| <PRINT: "System.out.println">
+| <AND: "&&">
+| <SMALLER: "<">
+| <PLUS: "+">
+| <MINUS: "-">
+| <START: "*">
+| <DOT: ".">
+| <LENGTH: "length">
+| <TRUE: "true">
+| <FALSE: "false">
+| <THIS: "this">
+| <NEW: "new">
+| <EXCLAMATION: "!">
+
+| < UNMATCHED_END_OF_COMMENT: "*/" > 
+| < IDENTIFIER: <LETTER> (<PART_LETTER>)* >
+| < INTEGER_LITERAL: <HEXADECIMAL> | <OCTAL> | <DECIMAL> > 
+| < INVALID: ~[] > 
+| < #LETTER: ["$", "A"-"Z", "_", "a"-"z"]>
+| < #PART_LETTER: <LETTER> | ["0"-"9"]>
+| < #HEXADECIMAL: "0"["x", "X"](["0"-"9", "a"-"f", "A"-"F"])+ > 
+| < #OCTAL: "0" (["0"-"7"])+ > 
+| < #DECIMAL: "0" | ["1"-"9"](["0"-"9"])* > 
+}
+
+
+void Goal() :
+{
+}
+{
+    try {
+        (  MiniJavaToken() )*
+        <EOF>
+    
+        // print identifiers and frequencies
+        {
+          System.out.println("INTEGER_LITERAL and line number:");
+          for (Map.Entry<String, Integer> entry: integerLiteralList){
+              System.out.println("Line " + entry.getValue() + ": " + entry.getKey());
+          }
+
+          System.out.println("\n");
+
+          System.out.println("Identifiers and frequencies:");
+          for (String k: identifiers.keySet()){
+              System.out.println(k + ": " + identifiers.get(k));
+          }
+
+          System.out.println("\n");
+
+          System.out.println("Other valid tokens and frequencies:");
+          for (String k: otherTokens.keySet()){
+              System.out.println(k + ": " + otherTokens.get(k));
+          }
+
+          System.out.println("\n");
+
+          System.out.println("Successfully recognized all tokens");
+        }
+    
+    } catch (TokenMgrError err) {
+        if (token_source.curLexState == IN_MULTI_LINE_COMMENT){
+            System.err.println("Line: " + token_source.mc + ", EOF in comment");
+        }
+    }
+}
+
+void MiniJavaToken():
+{
+    Token t = new Token();
+    String st = "";
+}
+{
+    t = "class" { putOtherTokens(t.toString()); }
+  | t = "{" { putOtherTokens(t.toString()); }
+  | t = "public" { putOtherTokens(t.toString()); }
+  | t = "static" { putOtherTokens(t.toString()); }
+  | t = "void" { putOtherTokens(t.toString()); }
+  | t = "main" { putOtherTokens(t.toString()); }
+  | t = "(" { putOtherTokens(t.toString()); }
+  | t = "String"  { putOtherTokens(t.toString()); }
+  | t = "[" { putOtherTokens(t.toString()); }
+  | t = "]" { putOtherTokens(t.toString()); }
+  | t = ")" { putOtherTokens(t.toString()); }
+  | t = "}" { putOtherTokens(t.toString()); }
+  | t = "extends" { putOtherTokens(t.toString()); }
+  | t = ";"{ putOtherTokens(t.toString()); }
+  | t = "return" { putOtherTokens(t.toString()); }
+  | t = "," { putOtherTokens(t.toString()); }
+  | t = "int" { putOtherTokens(t.toString()); }
+  | t = "boolean" { putOtherTokens(t.toString()); }
+  | t = "=" { putOtherTokens(t.toString()); }
+  | t = "if" { putOtherTokens(t.toString()); }
+  | t = "else" { putOtherTokens(t.toString()); }
+  | t = "while"{ putOtherTokens(t.toString()); }
+  | t = "System.out.println" { putOtherTokens(t.toString()); }
+  | t = "&&" { putOtherTokens(t.toString()); }
+  | t = "<" { putOtherTokens(t.toString()); }
+  | t = "+" { putOtherTokens(t.toString()); }
+  | t = "-" { putOtherTokens(t.toString()); }
+  | t = "*" { putOtherTokens(t.toString()); }
+  | t = "." { putOtherTokens(t.toString()); }
+  | t = "length" { putOtherTokens(t.toString()); }
+  | t = "true" { putOtherTokens(t.toString()); }
+  | t = "false" { putOtherTokens(t.toString()); }
+  | t = "this" { putOtherTokens(t.toString()); }
+  | t = "new" { putOtherTokens(t.toString()); }
+  | t = "!"{ putOtherTokens(t.toString()); }
+  | t = <IDENTIFIER> 
+    {
+        st = t.toString();
+        if (identifiers.containsKey(st)){
+            identifiers.put(st, identifiers.get(st) + 1);
+        } else {
+            identifiers.put(st, 1);
+        }
+    }
+  | t = <UNMATCHED_END_OF_COMMENT> 
+    {
+        System.out.println("Line: " + t.beginLine + ", Unmatched */");
+    }
+  | t = <INTEGER_LITERAL> 
+    {
+        integerLiteralList.add(new AbstractMap.SimpleEntry(t.image, t.beginLine));
+    }
+  | t = <INVALID> 
+    {
+        System.err.println("Line " + t.beginLine + ": Invalid character " + "'" + t.image + "'");
+    }
+}
+
+
